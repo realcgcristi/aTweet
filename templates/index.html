@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aTweet - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<style>
+.tweet-content a.hashtag {
+    color: #2ecc71; 
+}
+
+.tweet-content a.mention {
+    color: #27ae60; 
+}
+
+.tweet-content a.hashtag:hover {
+    color: #25a25a; 
+}
+
+.tweet-content a.mention:hover {
+    color: #1e8449;
+}
+</style>
+<body>
+    <div class="container">
+        <h1>aTweet</h1>
+        
+
+        <form action="{{ url_for('search') }}" method="GET" class="search-form">
+            <input type="text" name="q" placeholder="Search users...">
+            <button type="submit">Search</button>
+        </form>
+        
+        <form action="{{ url_for('tweet') }}" method="POST" class="tweet-form" enctype="multipart/form-data">
+            <textarea name="content" required placeholder="What's happening?" maxlength="280"></textarea>
+            <div class="form-footer">
+                <span class="char-count">280</span>
+                <button type="submit">Tweet</button>
+            </div>
+        </form>
+        <div class="tweets-list">
+            {% for tweet in tweets %}
+                <div class="tweet">
+                    <div class="tweet-header">
+                        <div class="tweet-user-info">
+                            <img src="{{ url_for('static', filename='uploads/' + (tweet.user_pfp if tweet.user_pfp else 'default_pfp.png')) }}" alt="{{ tweet.username }}" class="tweet-pfp">
+                            <div class="tweet-info">
+                                <a href="{{ url_for('profile', username=tweet.username) }}" class="tweet-username">{{ tweet.username }}</a>
+                                <span class="tweet-timestamp">{{ tweet.created_at.strftime('%b %d, %Y, %I:%M %p') }} (UTC +2)</span>
+                            </div>
+                        </div>
+                        {% if tweet.user_id == session.user_id %}
+                        <div class="tweet-options">
+                            <button class="options-button" onclick="toggleMenu({{ tweet.id }})">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <div id="menu-{{ tweet.id }}" class="tweet-menu">
+                                <button onclick="editTweet({{ tweet.id }})">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button onclick="deleteTweet({{ tweet.id }})">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <p class="tweet-content tweet-text-cull">{{ tweet.displayed_content|safe }}</p>
+                    {% if tweet.image %}
+                        <img src="{{ url_for('static', filename='uploads/' + tweet.image) }}" alt="Tweet image" class="tweet-image">
+                    {% endif %}
+                    <div class="tweet-actions">
+                        <button class="like-button {% if tweet.id in liked_tweet_ids %}liked{% endif %}" data-tweet-id="{{ tweet.id }}">
+                            <i class="fas fa-heart"></i> {{ tweet.likes }}
+                        </button>
+                        <button class="comment-button" data-tweet-id="{{ tweet.id }}">
+                            <i class="fas fa-comment"></i> Comment
+                        </button>
+                        <!-- Add retweet button -->
+                        <form action="{{ url_for('retweet', tweet_id=tweet.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="retweet-button">
+                                <i class="fas fa-retweet"></i> Retweet
+                            </button>
+                        </form>
+                    </div>
+                    {% if tweet.original_tweet_id %}
+                        <div class="retweet-info">
+                            Retweeted from <a href="{{ url_for('tweet_detail', tweet_id=tweet.original_tweet_id) }}">original tweet</a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <a href="{{ url_for('index') }}" class="footer-button">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="{{ url_for('profile', username=session.username) }}" class="footer-button">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{{ url_for('groups') }}" class="footer-button">
+                <i class="fas fa-users"></i> Groups
+            </a>
+            <a href="{{ url_for('dms') }}" class="footer-button">
+                <i class="fas fa-envelope"></i> DMs
+            </a>
+            {% if session.user_id and get_user_by_id(session.user_id)['username'] == 'avery' %}
+            <a href="{{ url_for('admin_panel') }}" class="footer-button">
+                <i class="fas fa-cog"></i> Admin Panel
+            </a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" class="footer-button">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </footer>
+    <script>
+        function toggleMenu(tweetId) {
+            const menu = document.getElementById(`menu-${tweetId}`);
+            menu.classList.toggle('show');
+        }
+
+        function editTweet(tweetId) {
+            window.location.href = `/edit_tweet/${tweetId}`;
+        }
+
+        function deleteTweet(tweetId) {
+            if (confirm('Are you sure you want to delete this tweet?')) {
+                fetch(`/delete_tweet/${tweetId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const tweetElement = document.querySelector(`.tweet[data-tweet-id="${tweetId}"]`);
+                            if (tweetElement) {
+                                tweetElement.remove();
+                            }
+                        } else {
+                            alert('Failed to delete tweet');
+                        }
+                    });
+            }
+        }
+
+        function commentOnTweet(tweetId) {
+            window.location.href = `/tweet/${tweetId}`;
+        }
+
+        function likeTweet(tweetId) {
+            fetch(`/like/${tweetId}`, { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        const likeButton = document.querySelector(`.like-button[data-tweet-id="${tweetId}"]`);
+                        likeButton.classList.toggle('liked');
+                        const likeCount = likeButton.querySelector('i').nextSibling;
+                        likeCount.textContent = ` ${data.likes}`;
+                    } else {
+                        throw new Error(data.message || 'Failed to like tweet');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to like tweet: ' + error.message);
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const likeButtons = document.querySelectorAll('.like-button');
+            const commentButtons = document.querySelectorAll('.comment-button');
+
+            likeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tweetId = this.getAttribute('data-tweet-id');
+                    likeTweet(tweetId);
+                });
+            });
+
+            commentButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tweetId = this.getAttribute('data-tweet-id');
+                    commentOnTweet(tweetId);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

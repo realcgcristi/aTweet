@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Messages - aTweet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .messages-container {
+            height: 300px;  /* Reduced by 25% from 400px */
+            overflow-y: auto;
+            border: 1px solid #38444d;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Direct Messages</h1>
+        <form action="{{ url_for('start_dm') }}" method="POST" class="dm-form">
+            <input type="text" name="username" placeholder="Enter username" required>
+            <button type="submit" class="btn btn-primary">Start Conversation</button>
+        </form>
+        <div class="messages-container" id="messagesContainer">
+            {% for dm in dms %}
+                <a href="{{ url_for('dm_conversation', username=dm.username) }}" class="dm-item">
+                    <img src="{{ url_for('static', filename='uploads/' + (dm.pfp if dm.pfp else 'default_pfp.png')) }}" alt="{{ dm.username }}" class="dm-avatar">
+                    <div class="dm-info">
+                        <span class="dm-name">{{ dm.username }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+        {% if has_more %}
+    <a href="{{ url_for('dms', page=page+1) }}" class="btn btn-primary load-more">Load More</a>
+{% endif %}
+    </div>
+    <footer>
+    <footer>
+        <div class="footer-container">
+            <a href="{{ url_for('index') }}" class="footer-button">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="{{ url_for('profile', username=session.username) }}" class="footer-button">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{{ url_for('groups') }}" class="footer-button">
+                <i class="fas fa-users"></i> Groups
+            </a>
+            <a href="{{ url_for('dms') }}" class="footer-button">
+                <i class="fas fa-envelope"></i> DMs
+            </a>
+            {% if session.user_id and get_user_by_id(session.user_id)['username'] == 'avery' %}
+            <a href="{{ url_for('admin_panel') }}" class="footer-button">
+                <i class="fas fa-cog"></i> Admin Panel
+            </a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" class="footer-button">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </footer>
+        <script>
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('messagesContainer');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Call this function when the page loads and after sending a new message
+        scrollToBottom();
+    </script>
+</body>
+</html>

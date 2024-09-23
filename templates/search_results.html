@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - aTweet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Search Results for "{{ query }}"</h1>
+        <div class="user-list">
+            {% for user in users %}
+                <div class="user-item">
+                    <img src="{{ url_for('static', filename='uploads/' + (user.pfp if user.pfp else 'default_pfp.png')) }}" alt="{{ user.username }}" class="user-pfp">
+                    <a href="{{ url_for('profile', username=user.username) }}">{{ user.username }}</a>
+                </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('index') }}">Back to Home</a>
+    </div>
+</body>
+</html>

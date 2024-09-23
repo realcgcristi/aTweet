@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Tweet - aTweet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Edit Tweet</h1>
+        <form action="{{ url_for('edit_tweet', tweet_id=tweet.id) }}" method="POST" class="tweet-form">
+            <textarea name="content" required maxlength="280">{{ tweet.content }}</textarea>
+            <div class="form-footer">
+                <span class="char-count">{{ 280 - tweet.content|length }}</span>
+                <button type="submit">Update Tweet</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        const textarea = document.querySelector('textarea');
+        const charCount = document.querySelector('.char-count');
+
+        textarea.addEventListener('input', function() {
+            const remaining = 280 - this.value.length;
+            charCount.textContent = remaining;
+            if (remaining < 0) {
+                charCount.style.color = 'red';
+            } else {
+                charCount.style.color = '';
+            }
+        });
+    </script>
+</body>
+</html>

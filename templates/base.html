@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>{% block title %}aTweet{% endblock %}</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>aTweet</h1>
+        </header>
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <a href="{{ url_for('index') }}" class="footer-button">
+                <i class="fas fa-home"></i> Home
+            </a>
+            {% if session.username %}
+            <a href="{{ url_for('profile', username=session.username) }}" class="footer-button">
+                <i class="fas fa-user"></i> Profile
+            </a>
+        {% endif %}
+            <a href="{{ url_for('groups') }}" class="footer-button">
+                <i class="fas fa-users"></i> Groups
+            </a>
+            <a href="{{ url_for('dms') }}" class="footer-button">
+                <i class="fas fa-envelope"></i> DMs
+            </a>
+            {% if session.user_id and get_user_by_id(session.user_id)['username'] == 'avery' %}
+            <a href="{{ url_for('admin_panel') }}" class="footer-button">
+                <i class="fas fa-cog"></i> Admin Panel
+            </a>
+            {% endif %}
+            <a href="{{ url_for('logout') }}" class="footer-button">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </footer>
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Tweet Detail - aTweet{% endblock %}
+
+{% block content %}
+    <div class="tweet-detail">
+        <h3>{{ tweet.username }}</h3>
+        <p>{{ tweet.content }}</p>
+        <button class="like-button {% if tweet.id in liked_tweet_ids %}liked{% endif %}" data-tweet-id="{{ tweet.id }}">
+            <i class="fas fa-heart"></i> <span class="like-count">{{ tweet.likes }}</span>
+        </button>
+        
+        <h4>Comments</h4>
+        <form id="comment-form">
+            <textarea name="content" rows="2" placeholder="Add a comment" required></textarea>
+            <button type="submit">Comment</button>
+        </form>
+        
+        <div id="comments-container">
+            {% for comment in comments %}
+                <p>{{ comment.username }}: {{ comment.content }}</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function likeTweet(tweetId) {
+            fetch(`/like/${tweetId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const likeButton = document.querySelector('.like-button');
+                        likeButton.classList.toggle('liked');
+                        document.querySelector('.like-count').textContent = data.likes;
+                    }
+                });
+        }
+
+        document.querySelector('.like-button').addEventListener('click', function() {
+            const tweetId = this.getAttribute('data-tweet-id');
+            likeTweet(tweetId);
+        });
+
+        document.getElementById('comment-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const content = this.content.value;
+            const tweetId = {{ tweet.id }};
+
+            fetch(`/comment/${tweetId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `content=${encodeURIComponent(content)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const commentsContainer = document.getElementById('comments-container');
+                    commentsContainer.innerHTML += `<p>{{ tweet.username }}: ${content}</p>`;
+                    this.content.value = '';
+                } else {
+                    alert('Failed to add comment');
+                }
+            });
+        });
+    </script>
+{% endblock %}

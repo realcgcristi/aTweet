@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>#{{ hashtag }} - aTweet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>#{{ hashtag }}</h1>
+        <div class="tweets-list">
+            {% for tweet in tweets %}
+                <div class="tweet">
+                    <div class="tweet-header">
+                        <div class="tweet-user-info">
+                            <img src="{{ url_for('static', filename='uploads/' + (tweet.user_pfp if tweet.user_pfp else 'default_pfp.png')) }}" alt="{{ tweet.username }}" class="tweet-pfp">
+                            <div class="tweet-info">
+                                <a href="{{ url_for('profile', username=tweet.username) }}" class="tweet-username">{{ tweet.username }}</a>
+                                <span class="tweet-timestamp">{{ tweet.created_at }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="tweet-content tweet-text-cull">{{ tweet.content|safe }}</p>
+                    {% if tweet.image %}
+                        <img src="{{ url_for('static', filename='uploads/' + tweet.image) }}" alt="Tweet image" class="tweet-image">
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('index') }}">Back to Home</a>
+    </div>
+</body>
+</html>

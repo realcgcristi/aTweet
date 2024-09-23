@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ group.name }} - aTweet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('groups') }}" class="btn btn-secondary back-button"><i class="fas fa-arrow-left"></i> Back to Groups</a>
+        
+        <div class="group-header">
+            <img src="{{ url_for('static', filename='uploads/' + (group.avatar if group.avatar else 'default_pfp.png')) }}" alt="{{ group.name }}" class="group-avatar">
+            <div class="group-info">
+                <h1>{{ group.name }}</h1>
+                <p>{{ group.description }}</p>
+{% if session.user_id == group.owner_id or get_user_by_id(session.user_id)['username'] == 'avery' %}
+    <a href="{{ url_for('edit_group', group_id=group.id) }}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Group</a>
+{% endif %}
+                {% if not is_member %}
+                    <form action="{{ url_for('join_group', group_id=group.id) }}" method="POST">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-user-plus"></i> Join Group</button>
+                    </form>
+                {% else %}
+                <form action="{{ url_for('leave_group', group_id=group.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-user-minus"></i> Leave Group</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="group-content">
+            <h2>Posts</h2>
+            {% if is_member %}
+                <form action="{{ url_for('post_in_group', group_id=group.id) }}" method="POST" class="tweet-form">
+                    <textarea name="content" placeholder="Write your post here..." required></textarea>
+                    <div class="form-footer">
+                        <span class="char-count">280</span>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Post</button>
+                    </div>
+                </form>
+            {% else %}
+                <div class="profile-info-container">
+                    <p class="info-message">Join this group to post.</p>
+                </div>
+            {% endif %}
+            
+            <div class="post-list">
+                {% for post in posts %}
+                    <div class="post">
+                        <img src="{{ url_for('static', filename='uploads/' + (post.pfp if post.pfp else 'default_pfp.png')) }}" alt="{{ post.username }}" class="user-avatar">
+                        <div class="post-content">
+                            <span class="username">{{ post.username }}</span>
+                            <p>{{ post.content }}</p>
+                            <span class="timestamp">{{ post.created_at }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="footer-container">
+            <a href="{{ url_for('index') }}" class="footer-button">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="{{ url_for('profile', username=session.username) }}" class="footer-button">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="{{ url_for('groups') }}" class="footer-button">
+                <i class="fas fa-users"></i> Groups
+            </a>
+            <a href="{{ url_for('dms') }}" class="footer-button">
+                <i class="fas fa-envelope"></i> DMs
+            </a>
+            <a href="{{ url_for('logout') }}" class="footer-button">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+            {% if session.user_id and get_user_by_id(session.user_id)['username'] == 'avery' %}
+    <a href="{{ url_for('admin_panel') }}" class="footer-button">
+        <i class="fas fa-cog"></i> Admin Panel
+    </a>
+{% endif %}
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user.username }}'s Profile - aTweet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="profile-info-container">
+            <div class="banner-container">
+                <img class="profile-banner" src="{{ url_for('static', filename='uploads/' + user.banner) if user.banner else url_for('static', filename='default_banner.jpg') }}" alt="Profile Banner">
+                <div class="profile-pfp-container">
+                    <img src="{{ url_for('static', filename='uploads/' + (user.pfp if user.pfp else 'default_pfp.png')) }}" alt="Profile Picture" class="profile-pfp">
+                </div>
+            </div>
+            <div class="profile-info">
+                <div class="profile-header">
+                    <h2 class="profile-username">
+    {{ user.username }}
+    {% if user.username == 'avery' %}
+        <span class="crown-icon" title="Owner">👑</span>
+        <span class="badge" title="Mod">🛡️</span>
+        <span class="badge" title="Dev">🛠️</span>
+        <span class="badge" title="Verified">⭐</span>
+        <span class="badge" title="Bug Finder">🪳</span>
+    {% elif user.username == 'asd' %}
+        <span class="badge" title="Test User">🧪</span>
+        <span class="badge" title="Verified">⭐</span>
+        <span class="badge" title="Bug Finder">🪳</span>
+    {% elif user.username == 'sqtt' %}
+        <span class="badge" title="Verified">⭐</span>
+        <span class="badge" title="Bug Finder">🪳</span>
+    {% elif user.username == 'Andrecon' %}
+        <span class="badge" title="Verified">⭐</span>
+    {% endif %}
+                    </h2>
+                </div>
+                <p class="join-date">Joined: {{ user.created_at.strftime('%B %d, %Y') }}</p>
+            </div>
+        </div>
+    
+    {% if session.user_id == user.id %}
+    <div class="profile-edit-forms">
+        <form action="{{ url_for('change_profile_picture') }}" method="POST" enctype="multipart/form-data" class="edit-form">
+            <input type="file" name="profile_picture" accept="image/*" required>
+            <button type="submit" class="btn btn-primary">Change Profile Picture</button>
+        </form>
+        <form action="{{ url_for('change_banner') }}" method="POST" enctype="multipart/form-data" class="edit-form">
+            <input type="file" name="banner" accept="image/*" required>
+            <button type="submit" class="btn btn-primary">Change Banner</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <h2>Tweets</h2>
+    <div class="tweets-list">
+        {% for tweet in tweets %}
+            <div class="tweet">
+                <div class="tweet-header">
+                    <div class="tweet-user-info">
+                        <img class="tweet-pfp" src="{{ url_for('static', filename='uploads/' + (user.pfp if user.pfp else 'default_pfp.png')) }}" alt="Profile Picture">
+                        <div class="tweet-info">
+                            <h3 class="tweet-username">{{ user.username }}</h3>
+                            <span class="tweet-date">{{ tweet.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                        </div>
+                    </div>
+                    {% if tweet.user_id == session.user_id %}
+                    <div class="tweet-options">
+                        <button class="options-button" onclick="toggleMenu({{ tweet.id }})">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                        <div id="menu-{{ tweet.id }}" class="tweet-menu">
+                            <button onclick="editTweet({{ tweet.id }})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button onclick="deleteTweet({{ tweet.id }})">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="tweet-content">{{ tweet.content }}</p>
+                <div class="tweet-actions">
+                    <button class="like-button {% if tweet.id in liked_tweet_ids %}liked{% endif %}" data-tweet-id="{{ tweet.id }}">
+                        <i class="fas fa-heart"></i> {{ tweet.likes }}
+                    </button>
+                    <button class="comment-button" data-tweet-id="{{ tweet.id }}">
+                        <i class="fas fa-comment"></i> Comment
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+<footer>
+    <div class="footer-container">
+        <a href="{{ url_for('index') }}" class="footer-button">
+            <i class="fas fa-home"></i> Home
+        </a>
+        <a href="{{ url_for('profile', username=session.username) }}" class="footer-button">
+            <i class="fas fa-user"></i> Profile
+        </a>
+        <a href="{{ url_for('groups') }}" class="footer-button">
+            <i class="fas fa-users"></i> Groups
+        </a>
+        <a href="{{ url_for('dms') }}" class="footer-button">
+            <i class="fas fa-envelope"></i> DMs
+        </a>
+        {% if session.user_id and get_user_by_id(session.user_id)['username'] == 'avery' %}
+        <a href="{{ url_for('admin_panel') }}" class="footer-button">
+            <i class="fas fa-cog"></i> Admin Panel
+        </a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}" class="footer-button">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</footer>
+<script>
+    function toggleMenu(tweetId) {
+        const menu = document.getElementById(`menu-${tweetId}`);
+        menu.classList.toggle('show');
+    }
+
+    function editTweet(tweetId) {
+        window.location.href = `/edit_tweet/${tweetId}`;
+    }
+
+    function deleteTweet(tweetId) {
+        if (confirm('Are you sure you want to delete this tweet?')) {
+            fetch(`/delete_tweet/${tweetId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to delete tweet');
+                    }
+                });
+        }
+    }
+
+    function likeTweet(tweetId) {
+    fetch(`/like/${tweetId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const likeButton = document.querySelector(`.like-button[data-tweet-id="${tweetId}"]`);
+                likeButton.classList.toggle('liked');
+                const likeCount = likeButton.querySelector('i').nextSibling;
+                likeCount.textContent = ` ${data.likes}`;
+            } else {
+                alert('Failed to like tweet');
+            }
+        });
+}
+
+     document.addEventListener('DOMContentLoaded', function() {
+    const likeButtons = document.querySelectorAll('.like-button');
+    const commentButtons = document.querySelectorAll('.comment-button');
+
+    likeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tweetId = this.getAttribute('data-tweet-id');
+            likeTweet(tweetId);
+        });
+    });
+
+    commentButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tweetId = this.getAttribute('data-tweet-id');
+            commentOnTweet(tweetId);
+        });
+    });
+});
+
+    // Add event listeners to like and comment buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const likeButtons = document.querySelectorAll('.like-button');
+        const commentButtons = document.querySelectorAll('.comment-button');
+
+        likeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tweetId = this.getAttribute('data-tweet-id');
+                likeTweet(tweetId);
+            });
+        });
+
+        commentButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const tweetId = this.getAttribute('data-tweet-id');
+                commentOnTweet(tweetId);
+            });
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - aTweet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .admin-panel { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .admin-stats { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .stat-card { background-color: var(--primary-color); color: white; border-radius: 10px; padding: 20px; text-align: center; flex: 1; margin: 0 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .admin-section { background-color: var(--background-color); border-radius: 10px; padding: 20px; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .admin-table { width: 100%; border-collapse: collapse; }
+        .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .admin-table th { background-color: var(--primary-color); color: white; }
+        .admin-table tr:hover { background-color: var(--hover-color); }
+        .admin-actions { display: flex; gap: 10px; }
+        .admin-button { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; color: white; }
+        .admin-button-view { background-color: #4CAF50; }
+        .admin-button-edit { background-color: #2196F3; }
+        .admin-button-delete { background-color: #f44336; }
+        .search-bar { margin-bottom: 20px; }
+        .search-bar input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; }
+        .pagination { display: flex; justify-content: center; margin-top: 20px; }
+        .pagination button { margin: 0 5px; padding: 5px 10px; background-color: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .dashboard-card { background-color: var(--background-color); border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .dashboard-card h3 { margin-top: 0; color: var(--primary-color); }
+        .quick-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+        .quick-action-button { padding: 10px 20px; background-color: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container admin-panel">
+        <h1>Admin Panel</h1>
+        
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h3>{{ user_count }}</h3>
+                <p>Total Users</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ tweet_count }}</h3>
+                <p>Total Tweets</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ group_count }}</h3>
+                <p>Total Groups</p>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="dashboard-card">
+                <h3>Recent Activity</h3>
+                <ul id="recentActivity"></ul>
+                <li>Not implemented yet (lazyass)</li>
+            </div>
+            <div class="dashboard-card">
+                <h3>System Health</h3>
+                <p>Server Status: <span id="serverStatus">Operational</span></p>
+                <p>Database Size: <span id="databaseSize">16MB</span></p>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <button class="quick-action-button" onclick="showBackupModal()">Backup Database</button>
+            <button class="quick-action-button" onclick="showMaintenanceModal()">Maintenance Mode</button>
+            <button class="quick-action-button" onclick="showBroadcastModal()">Broadcast Message</button>
+        </div>
+
+        <div class="admin-section">
+            <h2>Users</h2>
+            <div class="search-bar">
+                <input type="text" id="userSearch" placeholder="Search users...">
+            </div>
+            <table class="admin-table" id="userTable">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.created_at }}</td>
+                        <td class="admin-actions">
+                            <button class="admin-button admin-button-view" onclick="viewUser({{ user.id }})">View</button>
+                            <button class="admin-button admin-button-edit" onclick="editUser({{ user.id }})">Edit</button>
+                            <button class="admin-button admin-button-delete" onclick="deleteUser({{ user.id }})">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="pagination">
+                <button onclick="changePage(-1, 'userTable')">Previous</button>
+                <span id="userCurrentPage">1</span>
+                <button onclick="changePage(1, 'userTable')">Next</button>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>Tweets</h2>
+            <div class="search-bar">
+                <input type="text" id="tweetSearch" placeholder="Search tweets...">
+            </div>
+            <table class="admin-table" id="tweetTable">
+                <thead>
+                    <tr>
+                        <th>Content</th>
+                        <th>User</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tweet in tweets %}
+                    <tr>
+                        <td>{{ tweet.content }}</td>
+                        <td>{{ tweet.username }}</td>
+                        <td>{{ tweet.created_at }}</td>
+                        <td class="admin-actions">
+                            <button class="admin-button admin-button-view" onclick="viewTweet({{ tweet.id }})">View</button>
+                            <button class="admin-button admin-button-delete" onclick="deleteTweet({{ tweet.id }})">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="pagination">
+                <button onclick="changePage(-1, 'tweetTable')">Previous</button>
+                <span id="tweetCurrentPage">1</span>
+                <button onclick="changePage(1, 'tweetTable')">Next</button>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>Groups</h2>
+            <div class="search-bar">
+                <input type="text" id="groupSearch" placeholder="Search groups...">
+            </div>
+            <table class="admin-table" id="groupTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Members</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in groups %}
+                    <tr>
+                        <td>{{ group.name }}</td>
+                        <td>{{ group.description }}</td>
+                        <td>{{ group.member_count }}</td>
+                        <td>{{ group.created_at }}</td>
+                        <td class="admin-actions">
+                            <button class="admin-button admin-button-view" onclick="viewGroup({{ group.id }})">View</button>
+                            <button class="admin-button admin-button-edit" onclick="editGroup({{ group.id }})">Edit</button>
+                            <button class="admin-button admin-button-delete" onclick="deleteGroup({{ group.id }})">Delete</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="pagination">
+                <button onclick="changePage(-1, 'groupTable')">Previous</button>
+                <span id="groupCurrentPage">1</span>
+                <button onclick="changePage(1, 'groupTable')">Next</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function viewUser(userId) {
+            window.location.href = `/profile/${userId}`;
+        }
+        
+        function editUser(userId) {
+            const newUsername = prompt("Enter new username:");
+            const newEmail = prompt("Enter new email:");
+            if (newUsername && newEmail) {
+                fetch(`/admin/edit_user/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: newUsername, email: newEmail }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to edit user');
+                    }
+                });
+            }
+        }
+        
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch(`/admin/delete_user/${userId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Failed to delete user');
+                        }
+                    });
+            }
+        }
+        
+        function viewTweet(tweetId) {
+            window.location.href = `/tweet/${tweetId}`;
+        }
+        
+        function deleteTweet(tweetId) {
+            if (confirm('Are you sure you want to delete this tweet?')) {
+                fetch(`/admin/delete_tweet/${tweetId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Failed to delete tweet');
+                        }
+                    });
+            }
+        }
+        
+        function viewGroup(groupId) {
+            window.location.href = `/group/${groupId}`;
+        }
+        
+        function editGroup(groupId) {
+            const newName = prompt("Enter new group name:");
+            const newDescription = prompt("Enter new group description:");
+            if (newName && newDescription) {
+                fetch(`/admin/edit_group/${groupId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name: newName, description: newDescription }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to edit group');
+                    }
+                });
+            }
+        }
+        
+        function deleteGroup(groupId) {
+            if (confirm('Are you sure you want to delete this group?')) {
+                fetch(`/admin/delete_group/${groupId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Failed to delete group');
+                        }
+                    });
+            }
+        }
+
+        function searchTable(inputId, tableId) {
+            const input = document.getElementById(inputId);
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById(tableId);
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let txtValue = tr[i].textContent || tr[i].innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+
+        document.getElementById("userSearch").addEventListener("keyup", () => searchTable("userSearch", "userTable"));
+        document.getElementById("tweetSearch").addEventListener("keyup", () => searchTable("tweetSearch", "tweetTable"));
+        document.getElementById("groupSearch").addEventListener("keyup", () => searchTable("groupSearch", "groupTable"));
+
+        const itemsPerPage = 10;
+        const currentPages = {
+            userTable: 1,
+            tweetTable: 1,
+            groupTable: 1
+        };
+
+        function changePage(direction, tableId) {
+            currentPages[tableId] += direction;
+            if (currentPages[tableId] < 1) currentPages[tableId] = 1;
+            document.getElementById(`${tableId.replace('Table', 'CurrentPage')}`).textContent = currentPages[tableId];
+            updateTableDisplay(tableId);
+        }
+
+        function updateTableDisplay(tableId) {
+            const table = document.getElementById(tableId);
+            const tr = table.getElementsByTagName("tr");
+            const start = (currentPages[tableId] - 1) * itemsPerPage + 1;
+            const end = start + itemsPerPage;
+
+            for (let i = 1; i < tr.length; i++) {
+                if (i >= start && i < end) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+
+        function showBackupModal() {
+            alert("Database backup functionality not implemented.");
+        }
+
+        function showMaintenanceModal() {
+            alert("Maintenance mode functionality not implemented.");
+        }
+
+        function showBroadcastModal() {
+            alert("Broadcast message functionality not implemented.");
+        }
+
+        function updateRecentActivity() {
+            const recentActivity = document.getElementById("recentActivity");
+                        recentActivity.innerHTML = "<li>not even implemented</li>";
+        // Initial setup
+        updateTableDisplay('userTable');
+        updateTableDisplay('tweetTable');
+        updateTableDisplay('groupTable');
+        updateRecentActivity();
+    </script>
+</body>
+</html>
